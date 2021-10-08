@@ -1,0 +1,921 @@
+openapi: "3.0.2"
+info:
+  title: DTS API
+  version: "1.0"
+servers:
+  - url: https://api.server.test/dts/api
+paths:
+  /:
+    get:
+      description: |
+        # Endpoint Basics
+        ## Vocabulary
+        ### Collection
+        an identifiable aggregation of digital resources which has meaning in a specific research context. Resources may be virtual or real.
+
+        #### Readable Collection
+        a specific type of Collection which represents an aggregation of readable text passages (e.g. a structured text)
+
+        #### Reference
+        Identifier of a citable node inside a Readable Collection (aka text)
+
+        ## Media Types
+        The Collections and Navigation endpoints of the DTS API output application/ld+json adhering to Hydra conventions http://www.hydra-cg.com. The @id of any resource can be any URI, which may be a URL or a URI.
+
+        The Documents endpoint of the DTS API must be able to return application/tei+xml. Implementers of the API may return additional media-types for document content, including, HTML, PDF, syntax trees, or image formats.
+
+        ## Depth of secondary properties
+        In properties such as dts:extensions and dts:dublincore, the following rule apply regarding the maximum depth of metadata encoding :
+
+          - `collection["dts:extensions"]` and `collection["dts:dublincore"]` are namespaced dictionaries, working with collection["@graph"]
+          - `collection["extensions or dublincore"]["prefix:term"]` can be :
+              - a literal that cannot be localized (such as int) : `collection["extensions or dublincore"]["prefix:term"]` : 5
+              - a URIRef : `collection["extensions or dublincore"]["prefix:term"]` : "A String"
+              - a list of literal, including localized ones : `collection["extensions or dublincore"]["prefix:term"]` : `[{"@value": "Literal", "@lang": "eng"}]`
+              - a list of URIRef: `collection["extensions or dublincore"]["prefix:term"]` : `["http://wikidata.org/object/Author"]`
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/ld+json":
+              schema:
+                type: object
+                properties:
+                  "@context":
+                    type: string
+                    example: "/dts/api/contexts/EntryPoint.jsonld"
+                  "@id":
+                    type: string
+                    example: "/dts/api/"
+                  "@type":
+                    type: string
+                    example: "EntryPoint"
+                  collections:
+                    type: string
+                    example: "/dts/api/collections/"
+                  documents:
+                    type: string
+                    example: "/dts/api/documents/"
+                  navigation:
+                    type: string
+                    example: "/dts/api/navigation"
+  /collections:
+    parameters:
+      - name: id
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: string
+      - name: nav
+        in: query
+        schema:
+          type: string
+    get:
+      description: |
+        ## The collections endpoint
+
+        The collections endpoint is used for navigating collections. A collection contains metadata for the collection itself and an array of members. Each member is either a collection or the metadata for a document.
+
+        DTS does not specify URLs. Clients should discover URLs using navigation and link relations since URLs may differ among implementations.
+
+        ### Hydra Representation and Hierarchy
+        DTS does not specify any particular hierarchy of collections. A collection might provide all documents in a flat collection or a collection hierarchy organized by geography, time, or any other convenient logical grouping.
+      responses:
+        "200":
+          description: ""
+          content:
+            "application/ld+json":
+              examples:
+                "Child Collection":
+                  description: |
+                    #### Child collection containing a single work
+                    The example is a child of the parent root collection. It contains a single textual work as a member collection.
+
+                    ##### Example of url
+                      /api/dts/collections/?id=lasciva_roma
+                  value:
+                      '@context':
+                        '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                        dc: 'http://purl.org/dc/terms/'
+                        dts: 'https://w3id.org/dts/api#'
+                      '@id': lasciva_roma
+                      '@type': Collection
+                      totalItems: 3
+                      'dts:totalParents': 1
+                      'dts:totalChildren': 3
+                      title: Lasciva Roma
+                      description: >-
+                        Collection of primary sources of interest in the studies of Ancient World's
+                        sexuality
+                      'dts:dublincore':
+                        'dc:creator':
+                          - Thibault Clérice
+                          - 'http://orcid.org/0000-0003-1852-9204'
+                        'dc:title':
+                          - '@language': la
+                            '@value': Lasciva Roma
+                        'dc:description':
+                          - '@language': en
+                            '@value': >-
+                              Collection of primary sources of interest in the studies of Ancient
+                              World's sexuality
+                      member:
+                        - '@id': 'urn:cts:latinLit:phi1103.phi001'
+                          title: Priapeia
+                          'dts:dublincore':
+                            'dc:type':
+                              - 'http://chs.harvard.edu/xmlns/cts#work'
+                            'dc:creator':
+                              - '@language': en
+                                '@value': Anonymous
+                            'dc:language':
+                              - la
+                              - en
+                            'dc:description':
+                              - '@language': en
+                                '@value': Anonymous lascivious Poems
+                          '@type': Collection
+                          totalItems: 1
+                          'dts:totalParents': 1
+                          'dts:totalChildren': 1
+                "Child collection representing a single work":
+                  description: |
+                    #### Child collection representing a single work
+                    The example is a child collection. It represent a single textual work and its members are textual Resources that are individual expressions of that work. These Resources are therefore Readable Collections.
+
+                    ##### Note
+                    Although, this is optional, the expansion of @type:Resource’s metadata is advised to avoid multiple API calls.
+
+                    ##### Example of url :
+                    /api/dts/collections/?id=urn:cts:latinLit:phi1103.phi001            
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': 'urn:cts:latinLit:phi1103.phi001'
+                    '@type': Collection
+                    title: Priapeia
+                    'dts:dublincore':
+                      'dc:type':
+                        - 'http://chs.harvard.edu/xmlns/cts#work'
+                      'dc:creator':
+                        - '@language': en
+                          '@value': Anonymous
+                      'dc:language':
+                        - la
+                        - en
+                      'dc:title':
+                        - '@language': la
+                          '@value': Priapeia
+                      'dc:description':
+                        - '@language': en
+                          '@value': 'Anonymous lascivious Poems '
+                    totalItems: 1
+                    'dts:totalParents': 1
+                    'dts:totalChildren': 1
+                    member:
+                      - '@id': 'urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                        '@type': Resource
+                        title: Priapeia
+                        description: Priapeia based on the edition of Aemilius Baehrens
+                        totalItems: 0
+                        'dts:totalParents': 1
+                        'dts:totalChildren': 0
+                        'dts:dublincore':
+                          'dc:title':
+                            - '@language': la
+                              '@value': Priapeia
+                          'dc:description':
+                            - '@language': en
+                              '@value': 'Anonymous lascivious Poems '
+                          'dc:type':
+                            - 'http://chs.harvard.edu/xmlns/cts#edition'
+                            - 'dc:Text'
+                          'dc:source':
+                            - 'https://archive.org/details/poetaelatinimino12baeh2'
+                          'dc:dateCopyrighted': 1879
+                          'dc:creator':
+                            - '@language': en
+                              '@value': Anonymous
+                          'dc:contributor':
+                            - Aemilius Baehrens
+                          'dc:language':
+                            - la
+                            - en
+                        'dts:passage': '/api/dts/documents?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                        'dts:references': '/api/dts/navigation?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                        'dts:download': >-
+                          https://raw.githubusercontent.com/lascivaroma/priapeia/master/data/phi1103/phi001/phi1103.phi001.lascivaroma-lat1.xml
+                        'dts:citeDepth': 2
+                        'dts:citeStructure':
+                          - 'dts:citeType': poem
+                            'dts:citeStructure':
+                              - 'dts:citeType': line
+                "Child Readable Collection (i.e. a textual Resource)":
+                  description: |
+                    #### Child Readable Collection (i.e. a textual Resource)
+                    This example is a child Readable Collection, i.e. a textual Resource which is composed of passages of readable text. The response includes fields which identify the urls for the other 2 DTS api endpoints for further exploration of this Collection: dts:references for retrieval of passage references and dts:passage for retrieval of the entire collection of text passages (i.e the full document itself).
+
+                    ##### Example of url :
+                    /api/dts/collections/?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': 'urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    '@type': Resource
+                    title: Priapeia
+                    description: Priapeia based on the edition of Aemilius Baehrens
+                    totalItems: 0
+                    'dts:totalParents': 1
+                    'dts:totalChildren': 0
+                    'dts:dublincore':
+                      'dc:title':
+                        - '@language': la
+                          '@value': Priapeia
+                      'dc:description':
+                        - '@language': en
+                          '@value': 'Anonymous lascivious Poems '
+                      'dc:type':
+                        - 'http://chs.harvard.edu/xmlns/cts#edition'
+                        - 'dc:Text'
+                      'dc:source':
+                        - 'https://archive.org/details/poetaelatinimino12baeh2'
+                      'dc:dateCopyrighted': 1879
+                      'dc:creator':
+                        - '@language': en
+                          '@value': Anonymous
+                      'dc:contributor':
+                        - Aemilius Baehrens
+                      'dc:language':
+                        - la
+                        - en
+                    'dts:passage': '/api/dts/documents?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    'dts:references': '/api/dts/navigation?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    'dts:download': >-
+                      https://raw.githubusercontent.com/lascivaroma/priapeia/master/data/phi1103/phi001/phi1103.phi001.lascivaroma-lat1.xml
+                    'dts:citeDepth': 2
+                    'dts:citeStructure':
+                      - 'dts:citeType': poem
+                        'dts:citeStructure':
+                          - 'dts:citeType': line
+                "Paginated Child Collection":
+                  description: |
+                    #### Paginated Child Collection
+                    This is an example of a paginated request for a Child Collection’s members.
+
+                    ##### Example of url :
+                    /api/dts/collections/?id=lettres_de_poilus&page=19
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': lettres_de_poilus
+                    '@type': Collection
+                    totalItems: 10000
+                    'dts:totalParents': 1
+                    'dts:totalChildren': 10000
+                    title: Lettres de Poilus
+                    'dts:dublincore':
+                      'dc:publisher':
+                        - École Nationale des Chartes
+                        - 'https://viaf.org/viaf/167874585'
+                      'dc:title':
+                        - '@language': fr
+                          '@value': Lettres de Poilus
+                    member:
+                      - member 190 up to 200
+                    view:
+                      '@id': /api/dts/collections/?id=lettres_de_poilus&page=19
+                      '@type': PartialCollectionView
+                      first: /api/dts/collections/?id=lettres_de_poilus&page=1
+                      previous: /api/dts/collections/?id=lettres_de_poilus&page=18
+                      next: /api/dts/collections/?id=lettres_de_poilus&page=20
+                      last: /api/dts/collections/?id=lettres_de_poilus&page=500
+                "Parent Collection Query":
+                  description: |
+                    #### Parent Collection Query
+                    This is an example of a query for the parents of a Collection. Note that, in this context, totalItems == totalParents
+
+                    ##### Example of url :
+                    /api/dts/collections/?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1&nav=parents
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': 'urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    '@type': Resource
+                    title: Priapeia
+                    description: Priapeia based on the edition of Aemilius Baehrens
+                    totalItems: 1
+                    'dts:totalParents': 1
+                    'dts:totalChildren': 0
+                    'dts:dublincore':
+                      'dc:title':
+                        - '@language': la
+                          '@value': Priapeia
+                      'dc:description':
+                        - '@language': en
+                          '@value': 'Anonymous lascivious Poems '
+                      'dc:type':
+                        - 'http://chs.harvard.edu/xmlns/cts#edition'
+                      'dc:source':
+                        - 'https://archive.org/details/poetaelatinimino12baeh2'
+                      'dc:dateCopyrighted': 1879
+                      'dc:creator':
+                        - '@language': en
+                          '@value': Anonymous
+                      'dc:contributor':
+                        - Aemilius Baehrens
+                      'dc:language':
+                        - la
+                        - en
+                    'dts:passage': '/api/dts/documents?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    'dts:references': '/api/dts/navigation?id=urn:cts:latinLit:phi1103.phi001.lascivaroma-lat1'
+                    'dts:download': >-
+                      https://raw.githubusercontent.com/lascivaroma/priapeia/master/data/phi1103/phi001/phi1103.phi001.lascivaroma-lat1.xml
+                    'dts:citeDepth': 2
+                    'dts:citeStructure':
+                      - 'dts:citeType': poem
+                        'dts:citeStructure':
+                          - 'dts:citeType': line
+                    member:
+                      - '@id': 'urn:cts:latinLit:phi1103.phi001'
+                        title: Priapeia
+                        'dts:dublincore':
+                          'dc:type':
+                            - 'http://chs.harvard.edu/xmlns/cts#work'
+                          'dc:creator':
+                            - '@language': en
+                              '@value': Anonymous
+                          'dc:language':
+                            - la
+                            - en
+                          'dc:description':
+                            - '@language': en
+                              '@value': Anonymous lascivious Poems
+                        '@type': Collection
+                        totalItems: 1
+                        'dts:totalParents': 1
+                        'dts:totalChildren': 1
+
+              schema:
+                type: object
+                required:
+                  - "@context"
+                  - title
+                  - "@id"
+                  - "@type"
+                  - totalItems
+                  - "dts:totalChildren"
+                  - "dts:totalParents"
+                properties:
+                  "@context":
+                    type: string
+                    description: "must set the default vocabulary to Hydra and provide DCT, TEI and DTS namespace prefixes"
+                  title:
+                    type: string
+                    description: "is a single string. Additional descriptions may be placed in dts:dublincore using dc:title, e.g. for internationalization."
+                  "@id":
+                    type: string
+                    description: "is the identifier of the object (TODO: add language recommending the use of URIs for ids)"
+                  "@type":
+                    type: string
+                    description: "is either Collection or Resource"
+                  totalItems:
+                    type: integer
+                    description: total number of items that you can find in the members property (irrespective of pagination)
+                  "dts:totalChildren":
+                    type: integer
+                    description: "total number of members that you will find if you do nav=children"
+                  "dts:totalParents":
+                    type: integer
+                    description: "total number of members that you will find if you do nav=parents"
+                  "dts:citeDepth":
+                    type: integer
+                    description: declare the maximum depth of a readable resource (Required on Resource)
+                  description:
+                    type: string
+                    description: "is a string that describes the object. Additional descriptions may be placed in dts:dublincore using dc:description, e.g. for internationalization."
+                  member:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Member'
+                    description: contains members of the collection
+                  "dts:dublincore":
+                    type: string
+                    description: "contains Dublin Core Terms metadata"
+                  "dts:extensions":
+                    type: string
+                    description: "contains any supplementary information provided by other ontologies/domains"
+                  "dts:references":
+                    type: string
+                    description: "contains links to the Navigation API route for the object (TODO: mandatory in children of member?)"
+                  "dts:passage":
+                    type: string
+                    description: "contains a link to the Documents API for the object"
+                  "dts:download":
+                    type: string
+                    description: "contains a link or a list of links to a downloadable format of the object (TODO: decide on link or map of type:URL)"
+                  "dts:citeStructure":
+                    type: string
+                    description: "holds a declared citation tree, see Sub-collection readable"
+  /navigation:
+    get:
+      description: |
+        ## Navigation Endpoint
+
+        The Navigation endpoint provides a JSON object listing passages that are accessible for navigation from a given reference within a resource. While the Collection endpoint allows for traversing of collections and their constituent Resources, the Navigation endpoint is used for traversing the internal citation tree of an individual Resource.
+
+        Responses from the Navigation endpoint assume by default that the user is traversing the document downward in the citation tree. A request to the Navigation endpoint specifies a reference within a resource, and the response lists the references that are immediately above or below that reference point in the citation tree. The response also identifies the parent reference of that current node.
+      parameters:
+        -   name: id
+            in: query
+            schema:
+              type: string
+            description: the unique identifier (normally a URN) for the Resource being navigated
+        -   name: ref
+            in: query
+            schema:
+              type: string
+            description: (NOT used with start and end) a single passage identifier providing the point of reference for the Navigation request within the Resource. Such identifiers should be unique within a given Resource.
+        -   name: start
+            in: query
+            schema:
+              type: integer
+            description: (NOT used if a ref is specified, requires end as well) Start of the range passages to serve as the reference point for the Navigation request. This parameter is inclusive, so the supplied reference is considered part of the specified range.
+        -   name: end
+            in: query
+            schema:
+              type: integer
+            description: (NOT used if a ref is specified, requires start as well) End of the range of passages to serve as the reference point for the Navigation request. This parameter is inclusive, so the supplied reference is considered part of the specified range.
+        -   name: level
+            in: query
+            schema:
+              type: integer
+            description: the depth (as a number) for reference identifiers to be retrieved, relative to the specified ref or start/end values. E.g., if a request should return the children of the passage “1.2”, then the ref parameter should be “1.2” and the level parameter should be 2. This parameter does not indicate the absolute depth of the references in the Resource’s citation tree.
+        -   name: groupBy
+            in: query
+            schema:
+              type: string
+            description: Retrieve passages in groups of this size instead of single units. This would normally mean that the member list returned would be a list of ranges, each of which contains this number of passages.
+        -   name: max
+            in: query
+            schema:
+              type: integer
+            description: Allows for limiting the number of results and getting pagination
+        -   name: exclude
+            in: query
+            schema:
+              type: string
+            description: Exclude keys in members’ object such as exclude=dts:extensions
+      responses:
+        200:
+          description: "asd"
+          content:
+            "application/ld+json":
+              schema:
+                $ref: "#/components/schemas/NavigationResponse"
+              examples:
+                "Requesting top-level children of a textual Resource":
+                  description: |
+                    #### Requesting top-level children of a textual Resource
+                    The client wants to retrieve a list of passage identifiers that are part of the textual Resource identified as urn:cts:greekLit:tlg0012.tlg001.opp-grc5. In other words, the client wants a list of the top-level references in the resource’s citation structure. So the id parameter supplied in the query is the identifier of the Resource as a whole.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc5
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': '/api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc'
+                    'dts:citeDepth': 2
+                    'dts:level': 1
+                    member:
+                      - 'dts:ref': '1'
+                      - 'dts:ref': '2'
+                      - 'dts:ref': '3'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc{&ref}{&start}{&end}
+                    'dts:parent': null
+                "Requesting all descendants of a textual Resource at a specified level":
+                  description: |
+                    #### Requesting all descendants of a textual Resource at a specified level
+                    The client wants to retrieve a list of passage identifiers that are part of the textual Resource identified by urn:cts:greekLit:tlg0012.tlg001.opp-grc5 and can be found at the second level of the citation tree of the document. Although the second structural level is being returned, we are not requesting the descendants of any single upper-level node. The references returned are in relation to the document as a whole. So the parent node is the whole document.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc5&level=2                
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': '/api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc&level=2'
+                    'dts:citeDepth': 2
+                    'dts:level': 2
+                    member:
+                      - 'dts:ref': '1.1'
+                      - 'dts:ref': '1.2'
+                      - 'dts:ref': '2.1'
+                      - 'dts:ref': '2.2'
+                      - 'dts:ref': '3.1'
+                      - 'dts:ref': '3.2'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc{&ref}{&start}{&end}
+                    'dts:parent':
+                      '@type': Resource
+                      '@dts:ref': '/api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc'
+                "Requesting children of one top-level structural division of a Resource":
+                  description: |
+                    #### Requesting children of one top-level structural division of a Resource
+                    The client wants to retrieve a list of passage identifiers that are children of the textual Resource identified by urn:cts:greekLit:tlg0012.tlg001.opp-grc5 and its division 1. Since the specified reference, the point from which the descendants are viewed, is at the top level of the structural hierarchy, the parent in the return value is still the document as a whole.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc5&ref=1   
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': '/api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc&ref=1.1'
+                    'dts:citeDepth': 2
+                    'dts:level': 2
+                    member:
+                      - 'dts:ref': '1.1'
+                      - 'dts:ref': '1.2'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc{&ref}{&start}{&end}
+                    'dts:parent':
+                      '@type': Resource
+                      '@dts:ref': '/api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc'
+                "Requesting grandchild descendants of a top-level structural division":
+                  description: |
+                    #### Requesting grandchild descendants of a top-level structural division
+                    The client wants to retrieve a list of grand-children passage identifiers that are part of the textual Resource identified by urn:cts:latinLit:phi1294.phi001.perseus-lat2 and its passage 1. Since the specified reference, the point from which the descendants are viewed, is at the top level of the structural hierarchy, the parent in the return value is still the document as a whole.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1&level=2
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': '/api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1'
+                    'dts:citeDepth': 3
+                    'dts:level': 3
+                    member:
+                      - 'dts:ref': 1.1.1
+                      - 'dts:ref': 1.1.2
+                      - 'dts:ref': 1.2.1
+                      - 'dts:ref': 1.2.2
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2{&ref}{&start}{&end}
+                    'dts:parent':
+                      '@type': Resource
+                      'dts:ref': '/api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2'
+                "Requesting children of a lower-level structural division":
+                  description: |
+                    #### Requesting children of a lower-level structural division
+                    The client wants to retrieve a list of child passage identifiers that are part of the textual Resource identified by urn:cts:latinLit:phi1294.phi001.perseus-lat2 and its passage “1.1”. The returned parent is the direct parent (or parents) of the specified reference (“1.1”). Since it is not the document as a whole, the parent @type is “CitableUnit” rather than “Resource”.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1.1&level=1
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': '/api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1.1'
+                    'dts:citeDepth': 3
+                    'dts:level': 3
+                    member:
+                      - 'dts:ref': 1.1.1
+                      - 'dts:ref': 1.1.2
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2{&ref}{&start}{&end}
+                    'dts:parent':
+                      '@type': CitableUnit
+                      'dts:ref': '1'
+                "Requesting a range of passage references between milestones":
+                  description: |
+                    #### Requesting a range of passage references between milestones
+                    The client wants to retrieve a list of passage identifiers which are between two milestones. In this case there is no single parent node shared by the whole requested range, so no parent is returned. Since the reference list to be returned is at the same structural level as the supplied milestones, the level query parameter is “0”.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc5&level=0&start=1&end=3
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': >-
+                      /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc&level=0&start=1&end=3
+                    'dts:citeDepth': 2
+                    'dts:level': 1
+                    member:
+                      - 'dts:ref': '1'
+                      - 'dts:ref': '2'
+                      - 'dts:ref': '3'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc{&ref}{&start}{&end}
+                    'dts:parent': null
+                "Requesting descendants of the references in a specified range":
+                  description: |
+                    #### Requesting descendants of the references in a specified range
+                    The client wants to retrieve a list of passage identifiers which are between two milestones. Since the level query parameter is “1”, the returned references are one level below the milestones specified. I.e., the returned references are all children of structural divisions between the two milestones. In this case there is no single parent node shared by the whole requested range, so no parent is returned.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc5&level=1&start=1&end=3    
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                    '@id': >-
+                      /api/dts/navigation/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc&level=1&start=1&end=3
+                    'dts:citeDepth': 2
+                    'dts:level': 2
+                    member:
+                      - 'dts:ref': '1.1'
+                      - 'dts:ref': '1.2'
+                      - 'dts:ref': '2.1'
+                      - 'dts:ref': '2.2'
+                      - 'dts:ref': '3.1'
+                      - 'dts:ref': '3.2'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:greekLit:tlg0012.tlg001.opp-grc{&ref}{&start}{&end}
+                    'dts:parent': null
+                "Passages grouped by the provider":
+                  description: |
+                    #### Passages grouped by the provider
+                    The client wants to retrieve a list of grand-children ranges of two identifiers that are part of the textual Resource identified by urn:cts:latinLit:phi1294.phi001.perseus-lat2 and its passage 1. In this case the references are returned as ranges, each of which groups a number of sequential references equal to the groupBy request parameter. Since the specified ref is at the top structural level of the document, the returned parent is the entire Resource.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1&level=2&groupBy=2
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                      tei: 'http://www.tei-c.org/ns/1.0'
+                    '@id': >-
+                      /api/dts/navigation/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2&ref=1&level=2&groupSize=2
+                    'dts:citeDepth': 3
+                    'dts:level': 3
+                    member:
+                      - 'dts:start': 1.1.1
+                        'dts:end': 1.1.2
+                      - 'dts:start': 1.2.1
+                        'dts:end': 1.2.2
+                    'dts:passage': >-
+                      /dts/api/documents/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2{&ref}{&start}{&end}
+                    'dts:parent':
+                      '@type': Resource
+                      'dts:ref': >-
+                        /dts/api/documents/?id=urn:cts:latinLit:phi1294.phi001.perseus-lat2{&ref}{&start}{&end}
+                "Retrieval of typology of references":
+                  description: |
+                    #### Retrieval of typology of references
+                    Some passages may have a metadata type. The citeType refers to the type of a citable node. The node expects a free text or a RDF Class. A default type can be given at the root of the response object.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=http://data.bnf.fr/ark:/12148/cb11936111v
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                      foo: 'http://foo.bar/ontology#'
+                    '@id': '/api/dts/navigation/?id=http://data.bnf.fr/ark:/12148/cb11936111v'
+                    'dts:citeDepth': 1
+                    'dts:level': 1
+                    'dts:citeType': letter
+                    member:
+                      - 'dts:ref': Av
+                        'dts:citeType': preface
+                      - 'dts:ref': Pr
+                        'dts:citeType': preface
+                      - 'dts:ref': '1'
+                      - 'dts:ref': '2'
+                      - 'dts:ref': '3'
+                    'dts:passage': >-
+                      /dts/api/documents/?id=http://data.bnf.fr/ark:/12148/cb11936111v{&ref}{&start}{&end}
+                    'dts:parent': null
+                "Retrieval of titles and generic metadata":
+                  description: |
+                    #### Retrieval of titles and generic metadata
+                    The client wants the list of passages with their title. If the given data provider has a title, then it will be provided.
+
+                    ##### Example of url :
+                    /api/dts/navigation/?id=http://data.bnf.fr/ark:/12148/cb11936111v
+                  value:
+                    '@context':
+                      '@vocab': 'https://www.w3.org/ns/hydra/core#'
+                      dc: 'http://purl.org/dc/terms/'
+                      dts: 'https://w3id.org/dts/api#'
+                      foo: 'http://foo.bar/ontology#'
+                    '@id': '/api/dts/navigation/?id=http://data.bnf.fr/ark:/12148/cb11936111v'
+                    'dts:citeDepth': 1
+                    'dts:level': 1
+                    member:
+                      - 'dts:ref': Av
+                        'dts:dublincore':
+                          'dc:title': Avertissement de l'Éditeur
+                      - 'dts:ref': Pr
+                        'dts:dublincore':
+                          'dc:title': Préface
+                      - 'dts:ref': '1'
+                        'dts:dublincore':
+                          'dc:title': Lettre 1
+                        'dts:extensions':
+                          'foo:fictionalSender': Cécile Volanges
+                          'foo:fictionalRecipient': Sophie Carnay
+                      - 'dts:ref': '2'
+                        'dts:dublincore':
+                          'dc:title': Lettre 2
+                        'dts:extensions':
+                          'foo:fictionalSender': La Marquise de Merteuil
+                          'foo:fictionalRecipient': Vicomte de Valmont
+                      - 'dts:ref': '3'
+                        'dts:dublincore':
+                          'dc:title': Lettre 3
+                        'dts:extensions':
+                          'foo:fictionalSender': Cécile Volanges
+                          'foo:fictionalRecipient': Sophie Carnay
+                    'dts:passage': >-
+                      /dts/api/documents/?id=http://data.bnf.fr/ark:/12148/cb11936111v{&ref}{&start}{&end}
+                    'dts:parent': null
+
+  /documents:
+    description: |
+        #### asdfasdf
+    get:
+      description: |
+        #### Document Endpoint
+        The Document endpoint is used to access and modify the content of document, as opposed to metadata (which is found in collections). Implementations must at least support reading document using GET requests as described below. The other request methods (POST, PUT, DELETE) are not required and they may be implemented selectively. For example, an implementation could allow PUT operations to update the contents of a document, but not support the total removal of document sections using DELETE. If an implementation is going to allow modification of document contents please do so using these methods as described below. An implementation should always document clearly which methods are supported for this endpoint. This should be included both in the human-readable API guidelines and in the endpoint’s machine-readable documentation using the supportedOperation term. (See the section Machine Readable Endpoint Documentation below.)
+
+        #### Default Request and Response Body Format
+        Implementations of the DTS Document endpoint must, at minimum, return textual data in an XML format compliant with the Text Encoding Initiative (TEI) guidelines (application/tei+xml response format). 
+        The XML must be well formed and valid. This should be the default response format.
+
+        Implementations may return requested data in as many other formats as the content provider wishes. 
+        Other formats should not be included in the default response, but should be returned (one format per request) when an alternate format is specified in the request.
+
+        The root node of the XML response must be the <TEI> root element of the namespace http://www.tei-c.org/ns/1.0. So a response would normally look like this:
+
+        ```<?xml version="1.0" encoding="UTF-8"?>
+        <TEI xmlns="http://www.tei-c.org/ns/1.0">
+          <!-- XML of the document requested here -->
+        </TEI>
+        ```
+        If the request returns a complete document, it is returned directly inside this <TEI> element.
+
+        If the data to be returned is not a complete document, the textual data should be embedded in the <fragment> element of the DTS Namespace (https://w3id.org/dts/api#) like this:
+
+        ```<?xml version="1.0" encoding="UTF-8"?>
+        <TEI xmlns="http://www.tei-c.org/ns/1.0">
+          <dts:fragment xmlns:dts="https://w3id.org/dts/api#">
+            <!-- XML or string of the passage requested here -->
+          </dts:fragment>
+        </TEI>        
+        ```
+        There is no limitation as to what can be contained by dts:fragment or what its siblings can be provided they are well formed and valid. The only limiting factor is that dts:fragment should contain the requested textual data. This permits an implementation to return contextual material elsewhere within the root TEI node alongside the requested fragment. Note, though, that most metadata should be accessed through the collection endpoint instead.
+
+        For requests that include a document as the request body (PUT and POST) this request body is not required to follow these same guidelines. It is recommended, though, that implementations do accept TEI-compliant XML documents and fragments (as described above) as the default. Implementations may also allow a request body in any other format, but only when a format is specified via the format query parameter.
+
+        #### Preserving the Integrity of Edited Documents
+        Implementations of the DTS specification need not allow any write, update, or delete operations. If they do, however, this raises questions around how to maintain the integrity of the document on the server.
+
+        ##### Validating Changes to Documents
+        Because of its flexibility, at some points this specification relies on clients to ensure that the textual data they submit is correctly structured. This requires more than simply that clients submit valid XML when creating or editing a text segment. It is strongly recommended that servers implementing these methods offer robust validation of any submitted text. For servers using TEI XML in requests, this should include validating that the submitted text or fragment
+
+        - is well-formed XML
+        - satisfies the requirements of the TEI schema
+        - is consistent with the citation structure of the document being edited
+        - is consistent with the specific application of the TEI specification being used by the implementing project
+        
+        Failure to meet any of these criteria should result in a failed request and an error response that pinpoints the problem in the submitted text as specifically as possible.
+
+        ##### Restricting the Scope of Editing Operations
+        This burden of validation can be mitigated by restricting editing operations to one bottom-level segment of the document at a time. In a document with a three-level structural hierarchy of book, paragraph, and line, this would mean that only one line could be edited or deleted at a time. Such a restriction would allow the server to easily control the XML document structure. It would also, though, make some larger-scale editing operations unwieldy.
+
+        This specification leaves the choice to enforce editing restrictions like this up to the implementer. If such restrictions are imposed, any request that is rejected as a result must be accompanied by a clear error message. The error message must (a) explain the restriction, and (b) provide a URL where the restriction is documented.
+      responses:
+        200:
+          description: "TODO"
+components:
+  schemas:
+    NavigationMember:
+      type: object
+      properties:
+        "dts:ref":
+          type: string 
+          description: |
+            required unless dts:start and dts:end supplied	the unique passage identifier for one node in the citation structure of the Resource
+        "dts:start":
+          type: integer 
+          description: |
+            required if dts:ref is not present; requires that dts:end is also supplied	the unique passage identifier for the first member of a range of sequential passages. This parameter is inclusive, so the supplied reference is considered part of the specified range.
+        "dts:end":
+          type: integer 
+          description: |
+            required if dts:ref is not present; requires that dts:start is also supplied	the unique passage identifier for the last member of a range of sequential passages. This parameter is inclusive, so the supplied reference is considered part of the specified range.
+        "dts:citeType":
+          type: string 
+          description: |
+            optional	identifies the passage type for the specified passage or range. E.g., {"dts:ref": "1.2", "dts:citeType": "Poem"}
+        "dts:dublincore":
+          type: string 
+          description: |
+            optional	contains Dublin Core Terms metadata for the specified passage or range. E.g., {dts:ref": "1.2", "dts:dublincore": {"dc:author": "Balzac"}}
+        "dts:extensions":
+          type: string 
+          description: |
+            Optional	contains metadata for the specified passage or range from other namespaces
+    NavigationResponse:
+      type: object
+      properties:
+        "@id":
+          type: string
+          description: |
+            the ID of the current request. This value should be the request URL including any query parameters.
+        "dts:citeDepth":
+          type: integer
+          description: |
+            a number defining the maximum depth of the document’s citation tree. E.g., if the a document has up to three levels, dts:citeDepth should be the number 3.
+        "dts:citeType":
+          type: string
+          description: |
+            defines the default type of references listed in member.
+        "dts:level":
+          type: integer
+          description: |
+            a number identifying the hierarchical level of the references listed in member, counted relative to the top of the document’s citation tree. E.g., if a the returned references are at the second hierarchical level (like {"dts:ref": "1.1"}) then the dts:level in the response should be the number 2. (The Resource as a whole is considered level 0.)
+        "dts:passage":
+          type: string
+          description: |
+            the URI template to the Documents endpoint at which the text of passages corresponding to these references can be retrieved.
+        "dts:parent":
+          type: string
+          description: |
+            the unique passage identifier for the hierarchical parent of the current node in the document structure, defined by the ref query parameter. If the query specifies a range rather than a single ref, no parent should be specified and dts:parent should have a value of “null”.
+        member:
+          type: array
+          items:
+            $ref: "#/components/schemas/NavigationMember"
+          description: |
+            a list of passage references matching the requested parameters. This can be a list of single ids as objects with dts:ref values: [{"dts:ref": "a"}, {"dts:ref": "b"}, {"dts:ref": "1.1"}]. Or the list can contain ranges with dts:start and dts:end values in place of dts:ref values: [{"dts:start": "a", "dts:end": "b"}, {"dts:start": "1.1", "dts:end": "1.3"}]  
+    Member:
+      type: object
+      properties:
+        "@id":
+          type: string
+          example: "cartulaires"
+        title: 
+          type: string
+          example: "Cartulaires"
+        description: 
+          type: string
+          example: "Collection de cartulaires d'Île-de-France et de ses environs"
+        "@type":
+          type: string
+          example: "Collection"
+        totalItems:
+          type: integer
+          example: 10
+        "dts:totalParents":
+          type: integer
+          example: 1
+        "dts:totalChildren":
+          type: integer
+          example: 10
+    ErrorMessage:
+      type: object
+      xml:
+        namespace: "https://w3id.org/dts/api#"
+      properties:
+        "@context":
+          type: string
+          example: "http://www.w3.org/ns/hydra/context.jsonld"
+        "@type":
+          type: string
+          example: "Status"
+        statusCode:
+          type: integer
+          example: 429
+          xml:
+            attribute: true
+        title:
+          type: string
+          example: "Too Many Requests"
+        description:
+          type: string
+          example: "A maximum of 500 requests per hour and user is allowed."
